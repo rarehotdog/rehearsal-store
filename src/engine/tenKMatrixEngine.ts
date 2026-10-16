@@ -883,14 +883,18 @@ export function createTenKMatrixEngine(
 
   function pointerToCellIndex(ev: MouseEvent): number | null {
     const rect = canvas.getBoundingClientRect();
-    const x = ev.clientX - rect.left;
-    const y = ev.clientY - rect.top;
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    // Match the render coordinates when CSS scales the minimum-sized canvas.
+    const cssW = Math.max(320, Math.round(rect.width || 680));
+    const cssH = Math.max(260, Math.round(rect.height || 340));
+    const x = (ev.clientX - rect.left) * cssW / rect.width;
+    const y = (ev.clientY - rect.top) * cssH / rect.height;
     const padLeft = 48;
     const padRight = 14;
     const padTop = 28;
     const padBottom = 26;
-    const gridW = rect.width - padLeft - padRight;
-    const gridH = rect.height - padTop - padBottom;
+    const gridW = cssW - padLeft - padRight;
+    const gridH = cssH - padTop - padBottom;
     if (x < padLeft || x > padLeft + gridW || y < padTop || y > padTop + gridH) {
       return null;
     }

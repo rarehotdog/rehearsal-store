@@ -2160,6 +2160,12 @@ button:disabled {
 }
 
 @media (max-width: 768px) {
+  #floorplan-studio .rea-two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #imageFile {
+    max-width: 100%;
+  }
   .tenk-command-shell {
     padding: 14px 10px;
   }

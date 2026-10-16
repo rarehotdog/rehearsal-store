@@ -27,6 +27,10 @@ Requires Node 22.18+ (verified on Node 24). Run: `npm ci`, `npm run dev`, open `
 - Browser regression check: start the dev server, run `npx playwright install chromium`
   once, then `npm run test:ui -- http://localhost:3000`. The same command accepts
   a deployed URL and performs a fresh deterministic financial-engine run.
+  It verifies actual swarm rendering/motion, all wafer modes and filters, sweep
+  completion, exact mouse/touch cell selection, run #10000 and 10,000-row CSVs
+  at desktop 1440px and mobile 390px/320px (mobile DPR 2).
+  Use `UI_VIEWPORT_WIDTH=320 npm run test:ui -- <URL>` for the narrow-screen check.
 
 Full integration flow:
 https://github.com/rarehotdog/GDH/blob/main/docs/PERSONAL_HOSTING.md

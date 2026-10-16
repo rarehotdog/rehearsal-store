@@ -1253,7 +1253,7 @@ function mountShell(): void {
                   </span>
                 </div>
 
-                <div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0">
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0">
                   <button class="rea-btn-outline" id="previewPlanBtn" type="button">Preview Spec Sheet</button>
                   <button class="rea-btn-outline" id="jsonBtn" type="button">Export Scenario JSON</button>
                 </div>
@@ -1279,7 +1279,7 @@ function mountShell(): void {
                   <input type="checkbox" id="presenceConfirm" checked />
                   <span>Map bounding box into a physical fixture inside the 12.0m × 9.0m store floorplan.</span>
                 </label>
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px">
+                <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:8px">
                   <span class="status tabular" id="imageStatus">Drag on blueprint to define fixture footprint</span>
                   <button class="rea-btn-solid" id="applyBox" type="button" disabled>Inject into 3D Stage ↑</button>
                 </div>

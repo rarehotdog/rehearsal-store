@@ -40,6 +40,9 @@ https://github.com/rarehotdog/GDH.
 All original branches and commit history are retained. Original PR metadata,
 reviews and patches are preserved in [migration archive](docs/migration-archive/README.md).
 Historical source URLs there are provenance, not runtime dependencies.
+This repository is now standalone (`fork: false`). See
+[independent migration](docs/INDEPENDENT_MIGRATION.md) for the new repository ID
+and the AI Studio reconnection step after replacement of the old fork.
 
 ## Architecture & Core Modules
 - **3D Spatial Floorplan Internals (`src/engine/threeFloorplanStage.ts`)**: Interactive Three.js WebGL rotatable store floorplan with 16-slot LED queue buffer bars, 24-cell shared walkway sensor matrix, real-time customer agents, and CAD dimension rulers.

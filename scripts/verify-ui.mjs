@@ -5,12 +5,12 @@ import { chromium } from "playwright";
 
 const baseUrl = process.argv[2] ?? "http://127.0.0.1:3000";
 const artifacts = process.env.UI_ARTIFACT_DIR;
-const viewports = [{ width: 1440, height: 1000 }, { width: 390, height: 844 }, { width: 320, height: 844 }]
+const viewports = [{ width: 1440, height: 1000 }, { width: 1200, height: 900 }, { width: 900, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 844 }]
   .filter((viewport) => !process.env.UI_VIEWPORT_WIDTH || viewport.width === Number(process.env.UI_VIEWPORT_WIDTH));
-assert.ok(viewports.length, "UI_VIEWPORT_WIDTH must be 1440, 390, or 320");
+assert.ok(viewports.length, "UI_VIEWPORT_WIDTH must be 1440, 1200, 900, 390, or 320");
 if (artifacts) await mkdir(artifacts, { recursive: true });
 const browser = await chromium.launch({
-  headless: true,
+  headless: process.env.UI_HEADFUL !== "1",
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined,
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--enable-webgl"],
 });
@@ -57,6 +57,62 @@ try {
     });
     await page.goto(baseUrl, { waitUntil: "networkidle" });
     await page.waitForFunction(() => document.getElementById("backendEngineStatus")?.textContent?.includes("10,000"));
+    await page.evaluate(() => document.fonts.ready);
+    const layout = await page.evaluate(() => {
+      const badge = document.querySelector(".pgrun-brand-badge").getBoundingClientRect();
+      const toolbar = document.querySelector(".pgrun-hud-top-right").getBoundingClientRect();
+      const info = document.getElementById("threeInfoCard").getBoundingClientRect();
+      return {
+        headerFits: [...document.querySelectorAll(".rea-header-actions button")].every((button) => {
+          const rect = button.getBoundingClientRect();
+          return rect.left >= 0 && rect.right <= innerWidth + 1;
+        }),
+        badgeOverlapsToolbar: badge.width > 0 && badge.height > 0 &&
+          badge.left < toolbar.right && badge.right > toolbar.left &&
+          badge.top < toolbar.bottom && badge.bottom > toolbar.top,
+        infoOverlapsToolbar: info.left < toolbar.right && info.right > toolbar.left &&
+          info.top < toolbar.bottom && info.bottom > toolbar.top,
+      };
+    });
+    assert.ok(layout.headerFits, "header actions must not be clipped at this viewport");
+    assert.equal(layout.badgeOverlapsToolbar, false, "store title must not overlap the 3D toolbar");
+    assert.equal(layout.infoOverlapsToolbar, false, "description card must not cover the 3D toolbar");
+    for (const category of ["bakery", "matcha", "wine", "coffee"]) {
+      const button = page.locator(`[data-three-cat="${category}"]`);
+      await button.click();
+      assert.match(await button.getAttribute("class"), /active/);
+    }
+    for (const mode of ["baseline", "proposed"]) {
+      const button = page.locator(`[data-three-mode="${mode}"]`);
+      await button.click();
+      assert.match(await button.getAttribute("class"), /\bon\b/);
+    }
+    for (const design of ["island", "lounge", "express"]) {
+      const button = page.locator(`[data-three-design="${design}"]`);
+      await button.click();
+      assert.match(await button.getAttribute("class"), /\bon\b/);
+    }
+    for (const scenario of ["rainy", "layout", "influencer", "staff", "stroller", "both"]) {
+      const button = page.locator(`[data-three-scn="${scenario}"]`);
+      await button.click();
+      assert.match(await button.getAttribute("class"), /\bon\b/);
+    }
+    for (const camera of ["Top", "Pov", "Iso"]) {
+      const button = page.locator(`#three${camera}Btn`);
+      await button.click();
+      assert.match(await button.getAttribute("class"), /active/);
+      if (artifacts) await page.locator("#threeStageMount canvas").screenshot({ path: join(artifacts, `camera-${camera.toLowerCase()}-${viewport.width}.png`) });
+    }
+    await page.locator("#threeRevolveBtn").click();
+    assert.equal(await page.locator("#threeRevolveBtn").getAttribute("aria-pressed"), "true");
+    await page.locator("#threeRevolveBtn").click();
+    assert.equal(await page.locator("#threeRevolveBtn").getAttribute("aria-pressed"), "false");
+    await page.locator("#threeThemeBtn").click();
+    assert.equal(await page.locator("#pgrunStageShell").getAttribute("data-stage-theme"), "dark");
+    await page.locator("#threeThemeBtn").click();
+    assert.equal(await page.locator("#pgrunStageShell").getAttribute("data-stage-theme"), "light");
+    await page.locator("#threeOptimizeBtn").click();
+    assert.match(await page.locator("#threeInfoTitle").innerText(), /PREVIEW STORE RUN/);
     await page.waitForFunction(() => window.__swarmRender.frames > 3);
     const enabledLines = await page.evaluate(() => window.__swarmRender.previous);
     await page.locator("#threeSwarmBtn").click();
@@ -133,6 +189,20 @@ try {
     await page.locator("#inspJumpInput").press("Enter");
     await page.waitForFunction(() => document.getElementById("inspRunTitle")?.textContent === "STORE RUN #10000 / 10,000");
     assert.match(await page.locator("#inspFamilySub").innerText(), /Family #500.*Variant #20/);
+    await page.locator("#inspJumpInput").fill("9876");
+    await page.locator("#inspJumpBtn").click();
+    await page.waitForFunction(() => document.getElementById("inspRunTitle")?.textContent === "STORE RUN #09876 / 10,000");
+    await page.locator("#tenKTourBtn").click();
+    assert.equal(await page.locator("#tenKTourBtn").getAttribute("aria-pressed"), "true");
+    const firstTourRun = await page.locator("#inspRunTitle").innerText();
+    await page.waitForFunction((run) => document.getElementById("inspRunTitle")?.textContent !== run, firstTourRun);
+    await page.locator("#tenKTourBtn").click();
+    assert.equal(await page.locator("#tenKTourBtn").getAttribute("aria-pressed"), "false");
+    const stoppedTourRun = await page.locator("#inspRunTitle").innerText();
+    await page.waitForTimeout(2400);
+    assert.equal(await page.locator("#inspRunTitle").innerText(), stoppedTourRun);
+    await page.locator('[data-wafer-bench="rescued"]').click();
+    assert.match(await page.locator("#inspStatusBadge").innerText(), /RESCUED/);
     if (artifacts) await wafer.screenshot({ path: join(artifacts, `wafer-${viewport.width}.png`) });
 
     const initialFixtures = await page.evaluate(() => window.RehearsalApp.getState().scene.objects);
@@ -195,7 +265,7 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2), false);
     assert.deepEqual(errors, []);
     assert.deepEqual(failed, []);
-    const result = { baseUrl, viewport, selectedRun, stableWait: selectedWait, engine: await page.locator("#backendEngineStatus").innerText(), swarmRenderingAndMotion: "pass", simulatorPlayback: "pass", waferPointerAndTouch: "pass", waferModesAndFilters: "pass", sweepCompletion: "pass", csvRows: rows.length, mobileExports: "pass", blockedReport: "pass", errors, failed };
+    const result = { baseUrl, viewport, selectedRun, stableWait: selectedWait, engine: await page.locator("#backendEngineStatus").innerText(), headerAndToolbarLayout: "pass", categoryDesignScenarioCameraControls: "pass", waferJumpAndTour: "pass", swarmRenderingAndMotion: "pass", simulatorPlayback: "pass", waferPointerAndTouch: "pass", waferModesAndFilters: "pass", sweepCompletion: "pass", csvRows: rows.length, mobileExports: "pass", blockedReport: "pass", errors, failed };
     console.log(JSON.stringify(result));
     if (artifacts) {
       await writeFile(join(artifacts, `result-${viewport.width}.json`), JSON.stringify(result, null, 2) + "\n");

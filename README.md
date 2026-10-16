@@ -29,8 +29,11 @@ Requires Node 22.18+ (verified on Node 24). Run: `npm ci`, `npm run dev`, open `
   a deployed URL and performs a fresh deterministic financial-engine run.
   It verifies actual swarm rendering/motion, all wafer modes and filters, sweep
   completion, exact mouse/touch cell selection, run #10000 and 10,000-row CSVs
-  at desktop 1440px and mobile 390px/320px (mobile DPR 2).
+  at desktop 1440px, intermediate 1200px/900px, and mobile 390px/320px (mobile DPR 2).
+  Category/design/scenario and camera controls, header/toolbar bounds, Jump and
+  Tour start/stop are covered with normal clicks (no forced clicks).
   Use `UI_VIEWPORT_WIDTH=320 npm run test:ui -- <URL>` for the narrow-screen check.
+  Set `UI_HEADFUL=1` to show the browser while it performs the checks.
 
 Full integration flow:
 https://github.com/rarehotdog/GDH/blob/main/docs/PERSONAL_HOSTING.md
